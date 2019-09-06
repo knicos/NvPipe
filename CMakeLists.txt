@@ -75,7 +75,7 @@ if (NVPIPE_WITH_ENCODER)
         )
 endif()
 
-if (NVPIPE_WITH_DECODER)    
+if (NVPIPE_WITH_DECODER)
     list(APPEND NVPIPE_SOURCES
         src/Video_Codec_SDK_9.0.20/Samples/NvCodec/NvDecoder/NvDecoder.cpp
         )
@@ -88,7 +88,7 @@ if (NVPIPE_WITH_DECODER)
             link_directories(src/Video_Codec_SDK_9.0.20/Lib/x64)
         elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
             link_directories(src/Video_Codec_SDK_9.0.20/Lib/Win32)
-        endif()    
+        endif()
     endif()
 endif()
 
@@ -112,7 +112,7 @@ install(TARGETS ${PROJECT_NAME} EXPORT NvPipeConfig
     ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})
-install(FILES ${CMAKE_BINARY_DIR}/include/NvPipe.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES ${PROJECT_BINARY_DIR}/include/NvPipe.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(EXPORT NvPipeConfig DESTINATION share/NvPipe/cmake)
 
