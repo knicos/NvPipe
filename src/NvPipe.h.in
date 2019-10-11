@@ -31,6 +31,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <cuda_runtime_api.h>
+
 #cmakedefine NVPIPE_WITH_ENCODER
 #cmakedefine NVPIPE_WITH_DECODER
 #cmakedefine NVPIPE_WITH_OPENGL
@@ -112,9 +114,10 @@ NVPIPE_EXPORT void NvPipe_SetBitrate(NvPipe* nvp, uint64_t bitrate, uint32_t tar
  * @param width Width of input frame in pixels.
  * @param height Height of input frame in pixels.
  * @param forceIFrame Enforces an I-frame instead of a P-frame.
+ * @param stream Cuda stream, default to no stream
  * @return Size of encoded data in bytes or 0 on error.
  */
-NVPIPE_EXPORT uint64_t NvPipe_Encode(NvPipe* nvp, const void* src, uint64_t srcPitch, uint8_t* dst, uint64_t dstSize, uint32_t width, uint32_t height, bool forceIFrame);
+NVPIPE_EXPORT uint64_t NvPipe_Encode(NvPipe* nvp, const void* src, uint64_t srcPitch, uint8_t* dst, uint64_t dstSize, uint32_t width, uint32_t height, bool forceIFrame, cudaStream_t stream=0);
 
 
 #ifdef NVPIPE_WITH_OPENGL
@@ -172,9 +175,10 @@ NVPIPE_EXPORT NvPipe* NvPipe_CreateDecoder(NvPipe_Format format, NvPipe_Codec co
  * @param dst Device or host memory pointer.
  * @param width Width of frame in pixels.
  * @param height Height of frame in pixels.
+ * @param stream Cuda stream
  * @return Size of decoded data in bytes or 0 on error.
  */
-NVPIPE_EXPORT uint64_t NvPipe_Decode(NvPipe* nvp, const uint8_t* src, uint64_t srcSize, void* dst, uint32_t width, uint32_t height);
+NVPIPE_EXPORT uint64_t NvPipe_Decode(NvPipe* nvp, const uint8_t* src, uint64_t srcSize, void* dst, uint32_t width, uint32_t height, cudaStream_t stream=0);
 
 
 #ifdef NVPIPE_WITH_OPENGL
