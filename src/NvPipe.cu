@@ -506,7 +506,8 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-                uint4_to_nv12 << <gridSize, blockSize, 0, stream >> > ((uint8_t*)(copyToDevice ? this->deviceBuffer : src), srcPitch, (uint8_t*)f->inputPtr, f->pitch, width, height);
+				uint4_to_nv12 << <gridSize, blockSize, 0, stream >> > ((uint8_t*)(copyToDevice ? this->deviceBuffer : src), srcPitch, (uint8_t*)f->inputPtr, f->pitch, width, height);
+				cudaStreamSynchronize(stream);
             }
             else if (this->format == NVPIPE_UINT8)
             {
@@ -514,7 +515,8 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-                uint8_to_nv12 << <gridSize, blockSize, 0, stream >> > ((uint8_t*)(copyToDevice ? this->deviceBuffer : src), srcPitch, (uint8_t*)f->inputPtr, f->pitch, width, height);
+				uint8_to_nv12 << <gridSize, blockSize, 0, stream >> > ((uint8_t*)(copyToDevice ? this->deviceBuffer : src), srcPitch, (uint8_t*)f->inputPtr, f->pitch, width, height);
+				cudaStreamSynchronize(stream);
             }
             else if (this->format == NVPIPE_UINT16)
             {
@@ -522,7 +524,8 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-                uint16_to_nv12 << <gridSize, blockSize, 0, stream >> > ((uint8_t*)(copyToDevice ? this->deviceBuffer : src), srcPitch, (uint8_t*)f->inputPtr, f->pitch, width, height);
+				uint16_to_nv12 << <gridSize, blockSize, 0, stream >> > ((uint8_t*)(copyToDevice ? this->deviceBuffer : src), srcPitch, (uint8_t*)f->inputPtr, f->pitch, width, height);
+				cudaStreamSynchronize(stream);
             }
             else if (this->format == NVPIPE_UINT32)
             {
@@ -530,7 +533,8 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-                uint32_to_nv12 << <gridSize, blockSize, 0, stream >> > ((uint8_t*)(copyToDevice ? this->deviceBuffer : src), srcPitch, (uint8_t*)f->inputPtr, f->pitch, width, height);
+				uint32_to_nv12 << <gridSize, blockSize, 0, stream >> > ((uint8_t*)(copyToDevice ? this->deviceBuffer : src), srcPitch, (uint8_t*)f->inputPtr, f->pitch, width, height);
+				cudaStreamSynchronize(stream);
             }
         }
 
@@ -822,7 +826,8 @@ public:
                 dim3 gridSize(width / 16 / 2 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-                nv12_to_uint4 << <gridSize, blockSize, 0, stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width / 2, width, height);
+				nv12_to_uint4 << <gridSize, blockSize, 0, stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width / 2, width, height);
+				cudaStreamSynchronize(stream);
             }
             else if (this->format == NVPIPE_UINT8)
             {
@@ -830,7 +835,8 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-                nv12_to_uint8 << <gridSize, blockSize, 0, stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width, width, height);
+				nv12_to_uint8 << <gridSize, blockSize, 0, stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width, width, height);
+				cudaStreamSynchronize(stream);
             }
             else if (this->format == NVPIPE_UINT16)
             {
@@ -838,7 +844,8 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-                nv12_to_uint16 << <gridSize, blockSize, 0, stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width * 2, width, height);
+				nv12_to_uint16 << <gridSize, blockSize, 0, stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width * 2, width, height);
+				cudaStreamSynchronize(stream);
             }
             else if (this->format == NVPIPE_UINT32)
             {
@@ -846,7 +853,8 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-                nv12_to_uint32 << <gridSize, blockSize, 0, stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width * 4, width, height);
+				nv12_to_uint32 << <gridSize, blockSize, 0, stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width * 4, width, height);
+				cudaStreamSynchronize(stream);
             }
 
             // Copy to host if necessary
