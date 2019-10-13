@@ -423,13 +423,16 @@ public:
         this->codec = codec;
         this->compression = compression;
         this->bitrate = bitrate;
-        this->targetFrameRate = targetFrameRate;
+		this->targetFrameRate = targetFrameRate;
+		
+		cudaStreamCreate(&stream);
 
         this->recreate(width, height);
     }
 
     ~Encoder()
     {
+		cudaStreamDestroy(stream);
       // Destroy encoder
       if (this->encoder)
       {
@@ -468,7 +471,7 @@ public:
         this->targetFrameRate = targetFrameRate;
     }
 
-    uint64_t encode(const void* src, uint64_t srcPitch, uint8_t *dst, uint64_t dstSize, uint32_t width, uint32_t height, bool forceIFrame, cudaStream_t stream)
+    uint64_t encode(const void* src, uint64_t srcPitch, uint8_t *dst, uint64_t dstSize, uint32_t width, uint32_t height, bool forceIFrame)
     {
         // Recreate encoder if size changed
         if (this->format == NVPIPE_UINT16)
@@ -589,7 +592,7 @@ public:
             "Failed to get mapped PBO pointer");
 
         // Encode
-        uint64_t size = this->encode(pboPointer, width * 4, dst, dstSize, width, height, forceIFrame, 0);
+        uint64_t size = this->encode(pboPointer, width * 4, dst, dstSize, width, height, forceIFrame);
 
         // Unmap PBO
         CUDA_THROW(cudaGraphicsUnmapResources(1, &resource),
@@ -745,7 +748,8 @@ private:
     std::unique_ptr<NvEncoderCuda> encoder;
 
     void* deviceBuffer = nullptr;
-    uint64_t deviceBufferSize = 0;
+	uint64_t deviceBufferSize = 0;
+	cudaStream_t stream;
 
     static std::mutex mutex;
 
@@ -781,19 +785,21 @@ public:
     Decoder(NvPipe_Format format, NvPipe_Codec codec, uint32_t width, uint32_t height)
     {
         this->format = format;
-        this->codec = codec;
+		this->codec = codec;
+		cudaStreamCreate(&stream);
 
         this->recreate(width, height);
     }
 
     ~Decoder()
     {
+		cudaStreamDestroy(stream);
         // Free temporary device memory
         if (this->deviceBuffer)
             cudaFree(this->deviceBuffer);
     }
 
-    uint64_t decode(const uint8_t* src, uint64_t srcSize, void* dst, uint32_t width, uint32_t height, cudaStream_t stream)
+    uint64_t decode(const uint8_t* src, uint64_t srcSize, void* dst, uint32_t width, uint32_t height)
     {
         // Recreate decoder if size changed
         if (this->format == NVPIPE_UINT16)
@@ -826,8 +832,8 @@ public:
                 dim3 gridSize(width / 16 / 2 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-				nv12_to_uint4 << <gridSize, blockSize, 0, stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width / 2, width, height);
-				cudaStreamSynchronize(stream);
+				nv12_to_uint4 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width / 2, width, height);
+				cudaStreamSynchronize(this->stream);
             }
             else if (this->format == NVPIPE_UINT8)
             {
@@ -835,8 +841,8 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-				nv12_to_uint8 << <gridSize, blockSize, 0, stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width, width, height);
-				cudaStreamSynchronize(stream);
+				nv12_to_uint8 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width, width, height);
+				cudaStreamSynchronize(this->stream);
             }
             else if (this->format == NVPIPE_UINT16)
             {
@@ -844,8 +850,8 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-				nv12_to_uint16 << <gridSize, blockSize, 0, stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width * 2, width, height);
-				cudaStreamSynchronize(stream);
+				nv12_to_uint16 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width * 2, width, height);
+				cudaStreamSynchronize(this->stream);
             }
             else if (this->format == NVPIPE_UINT32)
             {
@@ -853,8 +859,8 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-				nv12_to_uint32 << <gridSize, blockSize, 0, stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width * 4, width, height);
-				cudaStreamSynchronize(stream);
+				nv12_to_uint32 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width * 4, width, height);
+				cudaStreamSynchronize(this->stream);
             }
 
             // Copy to host if necessary
@@ -920,7 +926,7 @@ public:
             "Failed to get mapped PBO pointer");
 
         // Decode
-        uint64_t size = this->decode(src, srcSize, pboPointer, width, height, 0);
+        uint64_t size = this->decode(src, srcSize, pboPointer, width, height);
 
         // Unmap PBO
         CUDA_THROW(cudaGraphicsUnmapResources(1, &resource),
@@ -1018,7 +1024,8 @@ private:
     int64_t n = 0;
 
     void* deviceBuffer = nullptr;
-    uint64_t deviceBufferSize = 0;
+	uint64_t deviceBufferSize = 0;
+	cudaStream_t stream;
 
     static std::mutex mutex;
 
@@ -1094,7 +1101,7 @@ NVPIPE_EXPORT void NvPipe_SetBitrate(NvPipe* nvp, uint64_t bitrate, uint32_t tar
     }
 }
 
-NVPIPE_EXPORT uint64_t NvPipe_Encode(NvPipe* nvp, const void* src, uint64_t srcPitch, uint8_t* dst, uint64_t dstSize, uint32_t width, uint32_t height, bool forceIFrame, cudaStream_t stream)
+NVPIPE_EXPORT uint64_t NvPipe_Encode(NvPipe* nvp, const void* src, uint64_t srcPitch, uint8_t* dst, uint64_t dstSize, uint32_t width, uint32_t height, bool forceIFrame)
 {
     Instance* instance = static_cast<Instance*>(nvp);
     if (!instance->encoder)
@@ -1105,7 +1112,7 @@ NVPIPE_EXPORT uint64_t NvPipe_Encode(NvPipe* nvp, const void* src, uint64_t srcP
 
     try
     {
-        return instance->encoder->encode(src, srcPitch, dst, dstSize, width, height, forceIFrame, stream);
+        return instance->encoder->encode(src, srcPitch, dst, dstSize, width, height, forceIFrame);
     }
     catch (Exception& e)
     {
@@ -1180,7 +1187,7 @@ NVPIPE_EXPORT NvPipe* NvPipe_CreateDecoder(NvPipe_Format format, NvPipe_Codec co
     return instance;
 }
 
-NVPIPE_EXPORT uint64_t NvPipe_Decode(NvPipe* nvp, const uint8_t* src, uint64_t srcSize, void* dst, uint32_t width, uint32_t height, cudaStream_t stream)
+NVPIPE_EXPORT uint64_t NvPipe_Decode(NvPipe* nvp, const uint8_t* src, uint64_t srcSize, void* dst, uint32_t width, uint32_t height)
 {
     Instance* instance = static_cast<Instance*>(nvp);
     if (!instance->decoder)
@@ -1191,7 +1198,7 @@ NVPIPE_EXPORT uint64_t NvPipe_Decode(NvPipe* nvp, const uint8_t* src, uint64_t s
 
     try
     {
-        return instance->decoder->decode(src, srcSize, dst, width, height, stream);
+        return instance->decoder->decode(src, srcSize, dst, width, height);
     }
     catch (Exception& e)
     {
