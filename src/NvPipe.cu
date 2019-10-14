@@ -824,7 +824,7 @@ public:
 
             if (this->format == NVPIPE_RGBA32)
             {
-                Nv12ToColor32<RGBA32>(decoded, width, dstDevice, width * 4, width, height);
+                Nv12ToColor32<RGBA32>(decoded, width, dstDevice, width * 4, width, height, 0, stream);
             }
             else if (this->format == NVPIPE_UINT4)
             {

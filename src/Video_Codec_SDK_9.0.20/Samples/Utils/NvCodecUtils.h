@@ -21,6 +21,8 @@
 
 extern simplelogger::Logger *logger;
 
+#include <cuda_runtime_api.h>
+
 #ifdef __cuda_cuda_h__
 inline bool check(CUresult e, int iLine, const char *szFile) {
     if (e != CUDA_SUCCESS) {
@@ -300,7 +302,7 @@ inline void ValidateResolution(int nWidth, int nHeight) {
 }
 
 template <class COLOR32>
-void Nv12ToColor32(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix = 0);
+void Nv12ToColor32(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix = 0, cudaStream_t s=0);
 template <class COLOR64>
 void Nv12ToColor64(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix = 0);
 
