@@ -825,6 +825,7 @@ public:
             if (this->format == NVPIPE_RGBA32)
             {
                 Nv12ToColor32<RGBA32>(decoded, width, dstDevice, width * 4, width, height, 0, stream);
+                //cudaStreamSynchronize(stream);
             }
             else if (this->format == NVPIPE_UINT4)
             {
@@ -833,7 +834,7 @@ public:
                 dim3 blockSize(16, 2);
 
 				nv12_to_uint4 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width / 2, width, height);
-				cudaStreamSynchronize(this->stream);
+				//cudaStreamSynchronize(this->stream);
             }
             else if (this->format == NVPIPE_UINT8)
             {
@@ -842,7 +843,7 @@ public:
                 dim3 blockSize(16, 2);
 
 				nv12_to_uint8 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width, width, height);
-				cudaStreamSynchronize(this->stream);
+				//cudaStreamSynchronize(this->stream);
             }
             else if (this->format == NVPIPE_UINT16)
             {
@@ -851,7 +852,7 @@ public:
                 dim3 blockSize(16, 2);
 
 				nv12_to_uint16 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width * 2, width, height);
-				cudaStreamSynchronize(this->stream);
+				//cudaStreamSynchronize(this->stream);
             }
             else if (this->format == NVPIPE_UINT32)
             {
@@ -860,14 +861,15 @@ public:
                 dim3 blockSize(16, 2);
 
 				nv12_to_uint32 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width * 4, width, height);
-				cudaStreamSynchronize(this->stream);
+				//cudaStreamSynchronize(this->stream);
             }
 
             // Copy to host if necessary
             if (copyToHost)
-                CUDA_THROW(cudaMemcpy(dst, this->deviceBuffer, getFrameSize(this->format, width, height), cudaMemcpyDeviceToHost),
+                CUDA_THROW(cudaMemcpyAsync(dst, this->deviceBuffer, getFrameSize(this->format, width, height), cudaMemcpyDeviceToHost, stream),
                     "Failed to copy output to host memory");
 
+            cudaStreamSynchronize(this->stream);
             return getFrameSize(this->format, width, height);
         }
 
