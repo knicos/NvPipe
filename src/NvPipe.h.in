@@ -178,7 +178,7 @@ NVPIPE_EXPORT NvPipe* NvPipe_CreateDecoder(NvPipe_Format format, NvPipe_Codec co
  * @param stream Cuda stream
  * @return Size of decoded data in bytes or 0 on error.
  */
-NVPIPE_EXPORT uint64_t NvPipe_Decode(NvPipe* nvp, const uint8_t* src, uint64_t srcSize, void* dst, uint32_t width, uint32_t height);
+NVPIPE_EXPORT uint64_t NvPipe_Decode(NvPipe* nvp, const uint8_t* src, uint64_t srcSize, void* dst, uint32_t width, uint32_t height, uint32_t pitch);
 
 
 #ifdef NVPIPE_WITH_OPENGL
@@ -207,7 +207,7 @@ NVPIPE_EXPORT uint64_t NvPipe_DecodeTexture(NvPipe* nvp, const uint8_t* src, uin
  * @param height Height of frame in pixels.
  * @return Size of decoded data in bytes or 0 on error.
  */
-NVPIPE_EXPORT uint64_t NvPipe_DecodePBO(NvPipe* nvp, const uint8_t* src, uint64_t srcSize, uint32_t pbo, uint32_t width, uint32_t height);
+NVPIPE_EXPORT uint64_t NvPipe_DecodePBO(NvPipe* nvp, const uint8_t* src, uint64_t srcSize, uint32_t pbo, uint32_t width, uint32_t height, uint32_t pitch);
 
 #endif
 

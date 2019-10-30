@@ -799,7 +799,7 @@ public:
             cudaFree(this->deviceBuffer);
     }
 
-    uint64_t decode(const uint8_t* src, uint64_t srcSize, void* dst, uint32_t width, uint32_t height)
+    uint64_t decode(const uint8_t* src, uint64_t srcSize, void* dst, uint32_t width, uint32_t height, uint32_t pitch)
     {
         // Recreate decoder if size changed
         if (this->format == NVPIPE_UINT16)
@@ -824,7 +824,7 @@ public:
 
             if (this->format == NVPIPE_RGBA32)
             {
-                Nv12ToColor32<RGBA32>(decoded, width, dstDevice, width * 4, width, height, 0, stream);
+                Nv12ToColor32<RGBA32>(decoded, width, dstDevice, pitch, width, height, 0, stream);
                 //cudaStreamSynchronize(stream);
             }
             else if (this->format == NVPIPE_UINT4)
@@ -833,7 +833,7 @@ public:
                 dim3 gridSize(width / 16 / 2 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-				nv12_to_uint4 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width / 2, width, height);
+				nv12_to_uint4 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, pitch, width, height);
 				//cudaStreamSynchronize(this->stream);
             }
             else if (this->format == NVPIPE_UINT8)
@@ -842,7 +842,7 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-				nv12_to_uint8 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width, width, height);
+				nv12_to_uint8 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, pitch, width, height);
 				//cudaStreamSynchronize(this->stream);
             }
             else if (this->format == NVPIPE_UINT16)
@@ -851,7 +851,7 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-				nv12_to_uint16 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width * 2, width, height);
+				nv12_to_uint16 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, pitch, width, height);
 				//cudaStreamSynchronize(this->stream);
             }
             else if (this->format == NVPIPE_UINT32)
@@ -860,7 +860,7 @@ public:
                 dim3 gridSize(width / 16 + 1, height / 2 + 1);
                 dim3 blockSize(16, 2);
 
-				nv12_to_uint32 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, width * 4, width, height);
+				nv12_to_uint32 << <gridSize, blockSize, 0, this->stream >> > (decoded, this->decoder->GetDeviceFramePitch(), dstDevice, pitch, width, height);
 				//cudaStreamSynchronize(this->stream);
             }
 
@@ -913,7 +913,7 @@ public:
         return 0;
     }
 
-    uint64_t decodePBO(const uint8_t* src, uint64_t srcSize, uint32_t pbo, uint32_t width, uint32_t height)
+    uint64_t decodePBO(const uint8_t* src, uint64_t srcSize, uint32_t pbo, uint32_t width, uint32_t height, uint32_t pitch)
     {
         if (this->format != NVPIPE_RGBA32)
             throw Exception("The OpenGL interface only supports the RGBA32 format");
@@ -928,7 +928,7 @@ public:
             "Failed to get mapped PBO pointer");
 
         // Decode
-        uint64_t size = this->decode(src, srcSize, pboPointer, width, height);
+        uint64_t size = this->decode(src, srcSize, pboPointer, width, height, pitch);
 
         // Unmap PBO
         CUDA_THROW(cudaGraphicsUnmapResources(1, &resource),
@@ -1189,7 +1189,7 @@ NVPIPE_EXPORT NvPipe* NvPipe_CreateDecoder(NvPipe_Format format, NvPipe_Codec co
     return instance;
 }
 
-NVPIPE_EXPORT uint64_t NvPipe_Decode(NvPipe* nvp, const uint8_t* src, uint64_t srcSize, void* dst, uint32_t width, uint32_t height)
+NVPIPE_EXPORT uint64_t NvPipe_Decode(NvPipe* nvp, const uint8_t* src, uint64_t srcSize, void* dst, uint32_t width, uint32_t height, uint32_t pitch)
 {
     Instance* instance = static_cast<Instance*>(nvp);
     if (!instance->decoder)
@@ -1200,7 +1200,7 @@ NVPIPE_EXPORT uint64_t NvPipe_Decode(NvPipe* nvp, const uint8_t* src, uint64_t s
 
     try
     {
-        return instance->decoder->decode(src, srcSize, dst, width, height);
+        return instance->decoder->decode(src, srcSize, dst, width, height, pitch);
     }
     catch (Exception& e)
     {
@@ -1231,7 +1231,7 @@ NVPIPE_EXPORT uint64_t NvPipe_DecodeTexture(NvPipe* nvp, const uint8_t* src, uin
     }
 }
 
-NVPIPE_EXPORT uint64_t NvPipe_DecodePBO(NvPipe* nvp, const uint8_t* src, uint64_t srcSize, uint32_t pbo, uint32_t width, uint32_t height)
+NVPIPE_EXPORT uint64_t NvPipe_DecodePBO(NvPipe* nvp, const uint8_t* src, uint64_t srcSize, uint32_t pbo, uint32_t width, uint32_t height, uint32_t pitch)
 {
     Instance* instance = static_cast<Instance*>(nvp);
     if (!instance->decoder)
@@ -1242,7 +1242,7 @@ NVPIPE_EXPORT uint64_t NvPipe_DecodePBO(NvPipe* nvp, const uint8_t* src, uint64_
 
     try
     {
-        return instance->decoder->decodePBO(src, srcSize, pbo, width, height);
+        return instance->decoder->decodePBO(src, srcSize, pbo, width, height, pitch);
     }
     catch (Exception& e)
     {
