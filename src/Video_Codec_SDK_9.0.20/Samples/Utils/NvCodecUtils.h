@@ -302,6 +302,8 @@ inline void ValidateResolution(int nWidth, int nHeight) {
 }
 
 template <class COLOR32>
+void Nv12ToYuv32(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix = 0, cudaStream_t s=0);
+template <class COLOR32>
 void Nv12ToColor32(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix = 0, cudaStream_t s=0);
 template <class COLOR64>
 void Nv12ToColor64(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix = 0);

@@ -24,6 +24,14 @@ union RGBA32 {
     } c;
 };
 
+union YUVA32 {
+    uint32_t d;
+    uchar4 v;
+    struct {
+        uint8_t v, u, y, a;
+    } c;
+};
+
 union BGRA64 {
     uint64_t d;
     ushort4 v;

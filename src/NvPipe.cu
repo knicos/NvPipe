@@ -84,7 +84,7 @@ inline bool isDevicePointer(const void* ptr)
 
 inline uint64_t getFrameSize(NvPipe_Format format, uint32_t width, uint32_t height)
 {
-    if (format == NVPIPE_RGBA32)
+    if (format == NVPIPE_RGBA32 || format == NVPIPE_YUV32)
         return width * height * 4;
     else if (format == NVPIPE_UINT4)
         return width * height / 2;
@@ -482,7 +482,7 @@ public:
             this->recreate(width, height);
 
         // RGBA can be directly copied from host or device
-        if (this->format == NVPIPE_RGBA32)
+        if (this->format == NVPIPE_RGBA32 || this->format == NVPIPE_YUV32)
         {
             const NvEncInputFrame* f = this->encoder->GetNextInputFrame();
             CUDA_THROW(cudaMemcpy2D(f->inputPtr, f->pitch, src, srcPitch, width * 4, height, isDevicePointer(src) ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice),
@@ -633,7 +633,12 @@ private:
                 this->encoder.reset();
             }
 
-            NV_ENC_BUFFER_FORMAT bufferFormat = (this->format == NVPIPE_RGBA32) ? NV_ENC_BUFFER_FORMAT_ABGR : NV_ENC_BUFFER_FORMAT_NV12;
+			NV_ENC_BUFFER_FORMAT bufferFormat; // = (this->format == NVPIPE_RGBA32) ? NV_ENC_BUFFER_FORMAT_ABGR : NV_ENC_BUFFER_FORMAT_NV12;
+			switch(this->format) {
+			case NVPIPE_RGBA32		: bufferFormat = NV_ENC_BUFFER_FORMAT_ABGR; break;
+			case NVPIPE_YUV32		: bufferFormat = NV_ENC_BUFFER_FORMAT_AYUV; break;
+			default					: bufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
+			}
             this->encoder = std::unique_ptr<NvEncoderCuda>(new NvEncoderCuda(cudaContext, width, height, bufferFormat, 0));
 
             NV_ENC_INITIALIZE_PARAMS initializeParams = { NV_ENC_INITIALIZE_PARAMS_VER };
@@ -826,7 +831,11 @@ public:
             {
                 Nv12ToColor32<RGBA32>(decoded, width, dstDevice, pitch, width, height, 0, stream);
                 //cudaStreamSynchronize(stream);
-            }
+			}
+			else if (this->format == NVPIPE_YUV32)
+			{
+				Nv12ToYuv32<YUVA32>(decoded, width, dstDevice, pitch, width, height, 0, stream);
+			}
             else if (this->format == NVPIPE_UINT4)
             {
                 // one thread per TWO pixels (merge 2x4 bit to one byte per thread)
