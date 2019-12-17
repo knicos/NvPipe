@@ -445,7 +445,7 @@ public:
         // Free temporary device memory
         if (this->deviceBuffer)
             cudaFree(this->deviceBuffer);
-    }
+	}
 
     void setBitrate(uint64_t bitrate, uint32_t targetFrameRate)
     {
@@ -657,17 +657,26 @@ private:
             initializeParams.encodeHeight = height;
             initializeParams.frameRateNum = this->targetFrameRate;
             initializeParams.frameRateDen = 1;
-            initializeParams.enablePTD = 1;
+			initializeParams.enablePTD = 1;
 
             encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH; // No B-frames
-            encodeConfig.frameIntervalP = 1;
+			encodeConfig.frameIntervalP = 1;
 
             if (this->codec == NVPIPE_H264)
                 encodeConfig.encodeCodecConfig.h264Config.idrPeriod = NVENC_INFINITE_GOPLENGTH;
-            else if (this->codec == NVPIPE_HEVC)
-                encodeConfig.encodeCodecConfig.hevcConfig.idrPeriod = NVENC_INFINITE_GOPLENGTH;
+            else if (this->codec == NVPIPE_HEVC) {
+				encodeConfig.encodeCodecConfig.hevcConfig.idrPeriod = NVENC_INFINITE_GOPLENGTH;
 
-            if (this->compression == NVPIPE_LOSSY)
+				if (this->compression == NVPIPE_LOSSY_10BIT_420 || this->compression == NVPIPE_LOSSY_10BIT_444) {
+					encodeConfig.encodeCodecConfig.hevcConfig.pixelBitDepthMinus8 = 2;  // For 10-bit colour
+				}
+
+				if (this->compression == NVPIPE_LOSSY_10BIT_444 || this->compression == NVPIPE_LOSSY_8BIT_444) {
+					encodeConfig.encodeCodecConfig.hevcConfig.chromaFormatIDC = 3;  // For Yuv444 (1 for 420)
+				}
+			}
+
+            if (this->compression != NVPIPE_LOSSLESS)
             {
                 encodeConfig.rcParams.averageBitRate = this->bitrate;
                 encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
@@ -744,7 +753,7 @@ private:
 private:
     NvPipe_Format format;
     NvPipe_Codec codec;
-    NvPipe_Compression compression;
+	NvPipe_Compression compression;
     uint64_t bitrate;
     uint32_t targetFrameRate;
     uint32_t width = 0;

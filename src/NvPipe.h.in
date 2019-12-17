@@ -63,7 +63,10 @@ typedef enum {
  */
 typedef enum {
     NVPIPE_LOSSY,
-    NVPIPE_LOSSLESS
+    NVPIPE_LOSSLESS,
+	NVPIPE_LOSSY_10BIT_420,
+	NVPIPE_LOSSY_10BIT_444,
+	NVPIPE_LOSSY_8BIT_444
 } NvPipe_Compression;
 
 
