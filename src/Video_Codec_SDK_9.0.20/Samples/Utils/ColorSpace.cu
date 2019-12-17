@@ -96,16 +96,6 @@ __device__ inline Rgb YuvToRgbForPixel(YuvUnit y, YuvUnit u, YuvUnit v) {
 
 template<class Rgb, class YuvUnit>
 __device__ inline Rgb YuvToYuvForPixel(YuvUnit y, YuvUnit u, YuvUnit v) {
-    const int 
-        low = 1 << (sizeof(YuvUnit) * 8 - 4),
-        mid = 1 << (sizeof(YuvUnit) * 8 - 1);
-    float fy = (int)y - low, fu = (int)u - mid, fv = (int)v - mid;
-    const float maxf = (1 << sizeof(YuvUnit) * 8) - 1.0f;
-    YuvUnit 
-        r = (YuvUnit)Clamp(matYuv2Rgb[0][0] * fy + matYuv2Rgb[0][1] * fu + matYuv2Rgb[0][2] * fv, 0.0f, maxf),
-        g = (YuvUnit)Clamp(matYuv2Rgb[1][0] * fy + matYuv2Rgb[1][1] * fu + matYuv2Rgb[1][2] * fv, 0.0f, maxf),
-        b = (YuvUnit)Clamp(matYuv2Rgb[2][0] * fy + matYuv2Rgb[2][1] * fu + matYuv2Rgb[2][2] * fv, 0.0f, maxf);
-    
     Rgb rgb{};
     const int nShift = abs((int)sizeof(YuvUnit) - (int)sizeof(rgb.c.y)) * 8;
     if (sizeof(YuvUnit) >= sizeof(rgb.c.y)) {
@@ -265,6 +255,14 @@ void Nv12ToYuv32(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitc
         (dpNv12, nNv12Pitch, dpBgra, nBgraPitch, nWidth, nHeight);
 }
 
+template <class COLOR>
+void Yuv420_10bitToYuv(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix, cudaStream_t s) {
+    //SetMatYuv2Rgb(iMatrix);
+    YuvToYuvKernel<ushort2, COLOR, ulonglong2>
+        <<<dim3((nWidth + 63) / 32 / 2, (nHeight + 3) / 2 / 2), dim3(32, 2), 0, s>>>
+        (dpNv12, nNv12Pitch, dpBgra, nBgraPitch, nWidth, nHeight);
+}
+
 template <class COLOR64>
 void Nv12ToColor64(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix) {
     SetMatYuv2Rgb(iMatrix);
@@ -355,6 +353,7 @@ void YUV444P16ToColorPlanar(uint8_t *dpYUV444, int nPitch, uint8_t *dpBgrp, int 
 
 // Explicit Instantiation
 template void Nv12ToYuv32<YUVA32>(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix, cudaStream_t);
+template void Yuv420_10bitToYuv<YUVA64>(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix, cudaStream_t);
 template void Nv12ToColor32<BGRA32>(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix, cudaStream_t);
 template void Nv12ToColor32<RGBA32>(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix, cudaStream_t);
 template void Nv12ToColor64<BGRA64>(uint8_t *dpNv12, int nNv12Pitch, uint8_t *dpBgra, int nBgraPitch, int nWidth, int nHeight, int iMatrix);

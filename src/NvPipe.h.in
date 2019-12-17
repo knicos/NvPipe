@@ -79,7 +79,8 @@ typedef enum {
     NVPIPE_UINT8,
     NVPIPE_UINT16,
     NVPIPE_UINT32,
-	NVPIPE_YUV32  // Added by Nick
+	NVPIPE_YUV32,  // Added by Nick
+	NVPIPE_YUV64  // Added by Nick
 } NvPipe_Format;
 
 

@@ -32,6 +32,14 @@ union YUVA32 {
     } c;
 };
 
+union YUVA64 {
+    uint64_t d;
+    ushort4 v;
+    struct {
+        uint16_t v, u, y, a;
+    } c;
+};
+
 union BGRA64 {
     uint64_t d;
     ushort4 v;

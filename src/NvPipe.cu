@@ -85,7 +85,9 @@ inline bool isDevicePointer(const void* ptr)
 inline uint64_t getFrameSize(NvPipe_Format format, uint32_t width, uint32_t height)
 {
     if (format == NVPIPE_RGBA32 || format == NVPIPE_YUV32)
-        return width * height * 4;
+		return width * height * 4;
+	else if (format == NVPIPE_YUV64)
+		return width * height * 8;
     else if (format == NVPIPE_UINT4)
         return width * height / 2;
     else if (format == NVPIPE_UINT8)
@@ -844,6 +846,10 @@ public:
 			else if (this->format == NVPIPE_YUV32)
 			{
 				Nv12ToYuv32<YUVA32>(decoded, width, dstDevice, pitch, width, height, 0, stream);
+			}
+			else if (this->format == NVPIPE_YUV64)
+			{
+				Yuv420_10bitToYuv<YUVA64>(decoded, width*2, dstDevice, pitch, width, height, 0, stream);
 			}
             else if (this->format == NVPIPE_UINT4)
             {
