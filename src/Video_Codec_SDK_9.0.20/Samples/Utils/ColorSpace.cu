@@ -97,7 +97,7 @@ __device__ inline Rgb YuvToRgbForPixel(YuvUnit y, YuvUnit u, YuvUnit v) {
 template<class Rgb, class YuvUnit>
 __device__ inline Rgb YuvToYuvForPixel(YuvUnit y, YuvUnit u, YuvUnit v) {
     Rgb rgb{};
-    const int nShift = abs((int)sizeof(YuvUnit) - (int)sizeof(rgb.c.y)) * 8;
+    /*const int nShift = abs((int)sizeof(YuvUnit) - (int)sizeof(rgb.c.y)) * 8;
     if (sizeof(YuvUnit) >= sizeof(rgb.c.y)) {
         rgb.c.y = y >> nShift;
         rgb.c.u = u >> nShift;
@@ -106,7 +106,11 @@ __device__ inline Rgb YuvToYuvForPixel(YuvUnit y, YuvUnit u, YuvUnit v) {
         rgb.c.y = y << nShift;
         rgb.c.u = u << nShift;
         rgb.c.v = v << nShift;
-    }
+	}*/
+	
+	rgb.c.y = y;
+	rgb.c.u = u;
+	rgb.c.v = v;
     return rgb;
 }
 
